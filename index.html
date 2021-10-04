@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>NYC Research Area</title>
+		<script src='https://api.mapbox.com/mapbox-gl-js/v1.10.0/mapbox-gl.js'></script>
+		<link href='https://api.mapbox.com/mapbox-gl-js/v1.10.0/mapbox-gl.css' rel='stylesheet'/>
+		<script src = "https://d3js.org/d3.v5.min.js" charset="utf-8"></script>
+
+
+		 <style>
+					 body {
+						 margin: 0;
+						 padding: 0;
+					 }
+
+					 h2 {
+						 margin: 10px;
+						 font-size: 1.2em;
+                         color:rgb(90, 106, 114);
+					 }
+
+					 h3 {
+						 margin: 10px;
+						 font-size: 1.0em;
+
+					 }
+
+					 p {
+						 margin: 10px;
+						 font-size: 1.0em;
+					 }
+
+                     h4 {
+						 margin: 10px;
+						 font-size: 0.7em;
+					 }
+
+					 var {
+						 font-size: 0.85em;
+						 margin: 10px;
+						 text-align: left;
+						}
+
+					 #map {
+						 position: absolute;
+						 top: 0;
+						 bottom: 0;
+						 width: 100%;
+					 }
+
+					 .map-overlay {
+						 position: absolute;
+						 bottom: 0;
+						 right: 0;
+						 background: rgba(255, 255, 255, 0.8);
+						 margin-right: 20px;
+						 font-family: Arial, sans-serif;
+						 overflow: auto;
+						 border-radius: 3px;
+					 }
+
+					 #features {
+						 top: 0;
+						 height: 75px;
+						 margin-top: 20px;
+						 width: 350px;
+					 }
+
+                     #features1 {
+						 top: 0;
+						 height: 75px;
+						 margin-top: 100px;
+						 width: 350px;
+					 }
+
+                     #features5 {
+						 top: 0;
+						 height: 100px;
+						 margin-top: 180px;
+						 width: 350px;
+					 }
+
+					 #features2 {
+						 top: 0;
+						 height: 150px;
+						 margin-top: 285px;
+						 width: 350px;
+					 }
+					 #features3 {
+						top: 0;
+						height: 150px;
+						margin-top: 440px;
+						width: 350px;
+					}
+					#features4 {
+					 top: 0;
+					 height: 150px;
+					 margin-top: 595px;
+					 width: 350px;
+				 }
+
+					 .textStyling {
+		 					font-family: arial;
+		 					font-size:0.70em;
+	 				}
+
+					.subtitleStyling {
+						 font-family: arial;
+						 font-size:0.75em;
+				 }
+
+                    .legendbox {
+                        position: absolute;
+                        bottom: 0;
+                        left: 0;
+                        background: rgba(255, 255, 255, 0.8);
+                        margin-left: 20px;
+                        font-family: Arial, sans-serif;
+                        font-size: 0.75em;
+                        overflow: auto;
+                        border-radius: 3px;
+					 }
+                     #legend {
+                        padding: 10px;
+                        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+                        line-height: 18px;
+                        top: 0;
+                        height: 120px;
+                        margin-top: 20px;
+                        margin-left: 20px;
+                        width: 160px;
+                        }
+
+                        .legend-key {
+                        display: inline-block;
+                        border-radius: 20%;
+                        width: 10px;
+                        height: 10px;
+                        margin-right: 5px;
+                        }
+
+
+		  </style>
+</head>
+
+<body>
+				<div id='map'></div>
+                <div class='map-overlay' id='features'><h2>Community Characterisitc</h2><div id='pd'></div></div>
+                <div class='map-overlay' id='features1'><h2>Policy Suggestions </h2><div id='p2'></div></div>
+                <div class='map-overlay' id='features5'><h2>Population and Income</h2><div id='p3'></div></div>
+				<div class='map-overlay' id='features2'><h2>Race </h2><div id='pd'></div></div>
+				<div class='map-overlay' id='features3'><h2>Age </h2><div id='pd'></div></div>
+                <div class='map-overlay' id='features4'><h2>Jobs </h2><div id='pd'></div></div>
+                <div class='legendbox' id='legend'></div>
+
+<script>
+				mapboxgl.accessToken = 'pk.eyJ1IjoieWFuY2hhb21jcCIsImEiOiJjazlxMDRqbzYwZWE1M3NydGF1NmQ4NzVsIn0.5QSCMwT1WAipIpX0Oo83Hg';
+
+				var map = new mapboxgl.Map({
+					container: 'map',
+					style: 'mapbox://styles/yanchaomcp/cka1u9hul1phg1img6utmld3n'
+				});
+
+				var svg = null;
+
+                //Legend
+                var layers = ["Lack of Bikeshare Stations",'Near Existing Stations',"Elderly Community","Young Commnuity","High Unemployment","Existing Bike Stations"];
+                        var colors = ['#e46001', '#fdb863', '#dcc6c6','#b2abd2','#5e3c99','#f4ff61'];
+
+                        for (i = 0; i < layers.length; i++) {
+                        var layer = layers[i];
+                        var color = colors[i];
+                        var item = document.createElement('div');
+                        var key = document.createElement('span');
+                        key.className = 'legend-key';
+                        key.style.backgroundColor = color;
+
+                        var value = document.createElement('span');
+                        value.innerHTML = layer;
+                        item.appendChild(key);
+                        item.appendChild(value);
+                        legend.appendChild(item);
+                        }
+
+				//hover of average income
+				map.on('mousemove', function(e) {
+				  var nyc = map.queryRenderedFeatures(e.point, {
+				    layers: ["cluster"]
+				  });
+
+				  if (nyc.length > 0) {
+					if (nyc[0].properties.cluster==1){
+						document.getElementById('pd').innerHTML = '<p> Near Existing Bikeshare Stations </p>'
+
+					}
+					if (nyc[0].properties.cluster==2){
+						document.getElementById('pd').innerHTML = '<p>Elderly Community </p>'
+					}
+					if (nyc[0].properties.cluster==3){
+						document.getElementById('pd').innerHTML = '<p>Young Commnuity</p>'
+					}
+					if (nyc[0].properties.cluster==4){
+						document.getElementById('pd').innerHTML = '<p>High Unemployment</p>'
+					}
+					if (nyc[0].properties.cluster==0){
+						document.getElementById('pd').innerHTML = '<p>Lack of Bikeshare Stations </p>'
+					}
+				    //document.getElementById('pd').innerHTML = '</h3><p><strong><em>' +  nyc[0].properties.cluster + '</strong> dollars per year per household</em></p>'+
+					                                           	//'</h3><p><strong><em>' +  nyc[0].properties.TOT_P_C + '</strong> people in this community</em></p>';
+				  } else {
+				    document.getElementById('pd').innerHTML = '<p> Not a Targeted Community </p>';
+				  }
+
+
+
+
+                  if (nyc.length > 0) {
+					if (nyc[0].properties.cluster==1){
+						document.getElementById('p2').innerHTML = '<p>Bikeshare Membership Subsidy </p>'
+					}
+					if (nyc[0].properties.cluster==2){
+						document.getElementById('p2').innerHTML = "<p>Increase Electric Bikeshare </p>"
+					}
+					if (nyc[0].properties.cluster==3){
+						document.getElementById('p2').innerHTML = "<p>Bike Training Program & Build Station </p>"
+					}
+					if (nyc[0].properties.cluster==4){
+						document.getElementById('p2').innerHTML = "<p>Membership Subsidy & Build Station</p>"
+					}
+					if (nyc[0].properties.cluster==0){
+						document.getElementById('p2').innerHTML = "<p>Add Stations and Bikes</p>"
+					}
+				    //document.getElementById('pd').innerHTML = '</h3><p><strong><em>' +  nyc[0].properties.cluster + '</strong> dollars per year per household</em></p>'+
+					                                           	//'</h3><p><strong><em>' +  nyc[0].properties.TOT_P_C + '</strong> people in this community</em></p>';
+				  } else {
+				    document.getElementById('p2').innerHTML = '<p> </p>';
+				  }
+
+
+                  if (nyc.length > 0) {
+				    document.getElementById('p3').innerHTML = '</h3><p><strong>'  + nyc[0].properties.Ave_HHIN_1 + ' </strong>'+ 'dollars per year per household</p>'+
+					                                           	'</h3><p><strong>' +  nyc[0].properties.TOT_P_C + ' </strong>' + 'people in this community</p>';
+				  } else {
+				    document.getElementById('p3').innerHTML = '<p2> </p2>';
+				  }
+
+
+
+
+          // table parameters
+					var width = 300;
+					var height= 100;
+					var barWidth = 25;
+
+				//	sexData = [[nyc[0].properties.TOT_F_C,"female"], [nyc[0].properties.TOT_M_C,"male"]]
+				  ageData = [[nyc[0].properties.C_18, "18-"], [nyc[0].properties.C_18_34,"18-34"], [nyc[0].properties.C_35_64,"35-64"], [nyc[0].properties.C_64_OVER,"65+"]]
+				//if (typeof nyc !== 'undefined') {
+					raceData = [[nyc[0].properties.WHITE_C,"White"], [nyc[0].properties.BLACK_C,"Black"], [nyc[0].properties.INDIA_C,"India"],
+						             [nyc[0].properties.ASIAN_C,"Asian"], [nyc[0].properties.NATIVE_C,"Native"],
+												 [nyc[0].properties.OTHER, "Other"],[nyc[0].properties.MORE,"Multi"]]
+											 // }
+					jobData = [[nyc[0].properties.C_16_IN,"people with jobs"], [nyc[0].properties.C_16_OFF,"people Unemployed"]]
+
+
+
+					const p = d3.select("div#features2");
+
+					//race
+					p.select("svg").remove();
+					let svg = p.append("svg")
+					   	.attr("width", width)
+					   	.attr("height", height);
+
+					svg.selectAll("rect")
+					   	.data(raceData)
+					   	.enter()
+					   	.append("rect")
+							.attr("height", function (d){
+								return d[0]/20;
+							})
+					    .attr( "x", function(d,i){
+								return i*(barWidth+15) + 30;
+							})
+					  	.attr( "y", function(d){
+								return 70 -d[0]/20;
+							})
+					   	.attr( "width", barWidth)
+							.attr( "fill", "#f4d03f");
+
+							svg.selectAll("g")
+									.data(raceData)
+									.enter()
+									.append("text")
+									.attr("class","textStyling")
+									.attr("text-anchor","end")
+									.attr("x",function(d,i) {return i*(barWidth+14) + 50;})
+									.attr("y",function(d) {return 90; })
+									.text(function(d){return d[1]; })
+
+			const p3 = d3.select("div#features3");
+
+				  	p3.select("svg").remove();
+					let svg2 = p3.append("svg")
+							.attr("width", width)
+							.attr("height", height);
+
+					svg2.selectAll("rect")
+							.data(ageData)
+							.enter()
+							.append("rect")
+							.attr("height", function (d){
+								return d[0]/20;
+							})
+							.attr( "x", function(d,i){
+								return i*(barWidth+25) + 80;
+							})
+							.attr( "y", function(d){
+								return 70 -d[0]/20;
+							})
+							.attr( "width", barWidth)
+							.attr( "fill", "#a569bd");
+
+							svg2.selectAll("g")
+									.data(ageData)
+									.enter()
+									.append("text")
+									.attr("class","textStyling")
+									.attr("text-anchor","end")
+									.attr("x",function(d,i) {return i*(barWidth+25) + 100;})
+									.attr("y",function(d) {return 90; })
+									.text(function(d){return d[1]; })
+
+
+		 const p4 = d3.select("div#features4");
+
+					p4.select("svg").remove();
+				let svg3 = p4.append("svg")
+						.attr("width", width)
+						.attr("height", height);
+
+				svg3.selectAll("rect")
+						.data(jobData)
+						.enter()
+						.append("rect")
+						.attr("height", function (d){
+							return d[0]/20;
+						})
+						.attr( "x", function(d,i){
+							return i*(barWidth+55) + 70;
+						})
+						.attr( "y", function(d){
+							return 70 -d[0]/20;
+						})
+						.attr( "width", barWidth)
+						.attr( "fill", "#f39c12");
+
+						svg3.selectAll("g")
+								.data(jobData)
+								.enter()
+								.append("text")
+								.attr("class","textStyling")
+								.attr("text-anchor","end")
+								.attr("x",function(d,i) {return i*(barWidth+100) + 120;})
+								.attr("y",function(d) {return 90; })
+								.text(function(d){return d[1]; })
+
+
+
+
+
+					 // var rect = svg.append("svg")
+						// 		.attr("width", width)
+						// 		.attr("height", 120);
+						// rect.selectAll("rect")
+						// 		.data(ageData)
+						// 		.enter()
+						// 		.append("rect")
+						// 		.attr("height", function (d){
+						// 			return d[0]/30;
+						// 		})
+						// 		.attr( "x", function(d,i){
+						// 			return i*(barWidth+15) + 30;
+						// 		})
+						// 		.attr( "y", function(d){
+						// 			return 220 -d[0]/30;
+						// 		})
+						// 		.attr( "width", barWidth)
+						// 		.attr( "fill", "#756bb1");
+
+
+							// set text style
+
+								// .data(ageData)
+								// .enter()
+								// .append("text")
+								// .attr("class","textStyling")
+								// .attr("text-anchor","end")
+								// .attr("x",function(d,i) {return i*(barWidth+14) + 50;})
+								// .attr("y",function(d) {return 240; })
+								// .text(function(d){return d[1]; })
+							// add a title
+							// svg.append("text")
+							// 	.text("Race in Researched Community")
+							// 	.attr("class","subtitleStyling")
+							// 	.attr("x",80)
+							// 	.attr("y",10)
+							//
+							// svg.append("text")
+							// 	.text("Age in Researched Community")
+							// 	.attr("class","subtitleStyling")
+							// 	.attr("x",80)
+							// 	.attr("y",140)
+							//
+							// svg.append("text")
+							// 	.text("Gender in Researched Community")
+							// 	.attr("class","subtitleStyling")
+							// 	.attr("x",80)
+							// 	.attr("y",270)
+							//
+							// 	svg.append("text")
+							// 		.text("Unemployment in Researched Community")
+							// 		.attr("class","subtitleStyling")
+							// 		.attr("x",50)
+							// 		.attr("y",400)
+
+      });
+
+</script>
+</body>
+</html>
